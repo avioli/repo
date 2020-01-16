@@ -1,3 +1,3 @@
 # repo
 
-A little util to list, fetch and clone AWS codecommit repos
+A little util to list and clone AWS codecommit repos
