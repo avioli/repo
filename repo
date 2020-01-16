@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+function fetch_repos() {
+	FILE="$TMPDIR/aws-repositories"
+	CURTIME=$(date +%s)
+	FILETIME=$(test -f "$FILE" && stat -f "%Dm" "$FILE" || echo 0)
+	TIMEDIFF=$(expr $CURTIME - $FILETIME)
+	if [[ "$TIMEDIFF" -gt 120 ]]; then
+		aws codecommit list-repositories | grep repositoryName | sed -E -e 's/^.*": "//g' -e 's/",//g' | tee "$FILE"
+	else
+		cat "$FILE"
+	fi
+}
+
+function fetch_url() {
+	aws codecommit get-repository --repository-name "$1" | grep cloneUrlSsh | grep -Eo 'ssh://[^"]*'
+}
+
+if [[ -z "$1" ]]; then
+	COMMAND="list"
+else
+	COMMAND="$1"
+	shift
+fi
+
+case "$COMMAND" in
+"list")
+	fetch_repos
+	;;
+"clone")
+	URL=$(fetch_url "$1")
+	git clone "$URL"
+	;;
+"get-url")
+	fetch_url "$1"
+	;;
+*)
+	echo "unknown command: $COMMAND"
+	exit 1
+	;;
+esac
+
